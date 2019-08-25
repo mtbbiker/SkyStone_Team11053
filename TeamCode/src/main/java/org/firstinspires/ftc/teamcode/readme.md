@@ -119,3 +119,38 @@ Note: Some names start with "Team" and others start with "team".  This is intent
 5)  Add:    include ':Team0417' to the "/settings.gradle" file.
     
 6)  Open up Android Studios and clean out any old files by using the menu to "Build/Clean Project""
+
+### Setup Wireless Debugging 
+
+Follow the steps from  ```https://tutorialsbynick.com/android-studio-tools-ftc/``` to setup External Tools to allow debugging over TCP
+
+You will connect your Laptop/PC to connect to the Robot Controller (Android Phone connected to the Robot's expansion Hub)
+
+To get the Wifi Info of the Robot:
+
+1. Open the FTC Driver station App on the Phone (Connected to the Hub with power)
+2. On the settings menu click on the ```About``` option to get the Phase Phrase so that you can connect your Laptop/PC to the Phone
+
+
+Connect the device via USB and make sure debugging is working.
+
+```   
+From command Line
+    
+Typically run from : eugene@wall-e:~/Android/Sdk/platform-tools$
+
+./adb tcpip 5555
+
+./adb connect 192.168.49.1:5555
+
+Disconnect USB and proceed with wireless debugging and Connect the phone to the Robot
+```
+
+
+Alternatively run from the External Tools (Connect Phone to USB for initial setup of ADB)
+    
+    1. Enable Debugging ```Enable ADB over TCP/IP
+    2. Connect to the Phone ```Connect to ADB over Wifi-Direct```
+    3. Disconnect USB and connect Phone to the Expansion Hub
+    
+Now you can make changes and view Logs on your Laptop without connecting and Disconnecting the USB cable all the Time
