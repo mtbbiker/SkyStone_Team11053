@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import org.firstinspires.ftc.robotcontroller.external.samples.ConceptVuforiaNavigationWebcam;
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
@@ -13,16 +14,16 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
 import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
 import org.firstinspires.ftc.robotcore.external.tfod.TFObjectDetector;
+import org.firstinspires.ftc.robotcore.internal.vuforia.VuforiaLocalizerImpl;
 
 import java.util.List;
 import java.util.Locale;
 
-//This Autonomous Mode will do the Following (It will not Drop a Beacon):
-// 1. Sample Mineral opposite the Crator
-// 2. Park at the Crator, avoiding Silver Minerals
+//This Autonomous Mode will follow a sample
+// OpmOde ends when the touch sensor is pressed
 //@Disabled
-@Autonomous(name = "1_SampleAtCratorAndPark", group = "AutoOp")
-public class AOSampleAndParkCrater extends LinearOpMode {
+@Autonomous(name = "1_Mineral_Sampling_Example", group = "AutoOp")
+public class ImageDetectionSample extends LinearOpMode {
 
     public static final String TAG = "Vuforia VuMark Sample";
 
@@ -46,21 +47,25 @@ public class AOSampleAndParkCrater extends LinearOpMode {
     private static final String LABEL_SILVER_MINERAL = "Silver Mineral";
 
     private TFObjectDetector tfod;
+    DigitalChannel digitalTouch;  // Hardware Device Object
 
     AutoOpTriRobot robot = new AutoOpTriRobot();
+
+
+
+
     @Override
     public void runOpMode() throws InterruptedException {
 
         try{
+
+
             robot.init(hardwareMap);
 
             telemetry.addData(">", "Wait for configuration........");
             telemetry.update();
-            /*
-             * Retrieve the camera we are to use.
-             */
             webcamName = hardwareMap.get(WebcamName.class, "Webcam 1");
-            //robot.initCamera();
+            //webcamName.resetDeviceConfigurationForOpMode();
 
             initVuforia();
             //sleep(1000);
@@ -72,8 +77,15 @@ public class AOSampleAndParkCrater extends LinearOpMode {
 
             MineralDetected detected = new MineralDetected();
 
+            telemetry.addData("====>", "Press the Touch Sensor to stop.. and Exit");
             telemetry.addData(">", "Press Play to start");
             telemetry.update();
+
+            // get a reference to our digitalTouch object.
+            digitalTouch = hardwareMap.get(DigitalChannel.class, "touch_sensor");
+
+            // set the digital channel to input.
+            digitalTouch.setMode(DigitalChannel.Mode.INPUT);
 
             waitForStart();
             robot.setRobottelemetry(telemetry);
@@ -87,7 +99,7 @@ public class AOSampleAndParkCrater extends LinearOpMode {
                 }
                 boolean sampledetected =false;
 
-                while (!sampledetected) {
+                while (!sampledetected ) {
 
                     double DRIVE_SPEED =1 ;
                     double ROTATE_POWER = 1;
@@ -183,75 +195,86 @@ public class AOSampleAndParkCrater extends LinearOpMode {
                         }
                     }
 
-                    if(sampledetected){
-                        //Sample and add Path and Park in Crator
-                        telemetry.addData("Moving to Mineral!", "Hdng,Pos:(" + detected.targetHeading + "),(" + detected.position + ")");
-                        //From the Lander
-                        //1. Rotate towards mineral
-                        //2. Setup collector and drive towards sample
-                        //3. Turn to avoid Silver
-                        //4. Lift Arm to fit over crator
-                        //5. Drive and Park
-                        switch (detected.position)
-                        {
-                            case LEFT:
-                                                                //robot.encoderDriveStraight(DRIVE_SPEED,150,3);
-                                robot.imuDriveStraight(0.2,150,3);
-                                robot.rotate(-1 * (int) Math.round(detected.targetHeading), ROTATE_POWER);//0.6
-                                //robot.sampleMineral();
-                                //robot.encoderDriveStraight(DRIVE_SPEED, 500, 4);
-                                //Move a bit forward to make sure if we drop the mineral its completely moved
-                                //robot.encoderDriveStraight(DRIVE_SPEED, 50, 4);
-                                //Lift the arm up
-                                //robot.encoderMoveLift(1000, DRIVE_SPEED, 3);
-                                //Turn a bit right to make sure we are over the crator
-                                //robot.rotate(-5,0.8);
-                                //Drive to Crator to park
-                                //robot.encoderDriveStraight(DRIVE_SPEED,200,3);
-                                break;
-                            case CENTER:
-                                //setupCollectorliftarm();
-                                //robot.encoderDriveStraight(DRIVE_SPEED,150,3);
-                                //robot.sampleMineral();
-                                //robot.encoderDriveStraight(DRIVE_SPEED, 500, 4);
-                                //Move a bit forward to make sure if we drop the mineral its completely moved
-                                //robot.encoderDriveStraight(DRIVE_SPEED, 50, 4);
-                                //Lift the arm up
-                                //robot.encoderMoveLift(1000, DRIVE_SPEED, 3);
-                                //Drive to Crator to park
-                                //robot.encoderDriveStraight(DRIVE_SPEED,100,3);
-                                break;
-                            case RIGHT:
-                                //setupCollectorliftarm();
-                                //robot.encoderDriveStraight(DRIVE_SPEED,150,3);
-                                robot.rotate(-17, ROTATE_POWER);//0.6
-                                //robot.sampleMineral();
-                                //Turn a bit left to make sure we are over the crater
-                                //robot.encoderDriveStraight(DRIVE_SPEED, 500, 4);
-                                //Lift the arm up
-                                //robot.encoderMoveLift(1000, DRIVE_SPEED, 3);
-                                //robot.rotate(5,0.5);
-                                //Drive to Crator to park
-                                //robot.encoderDriveStraight(DRIVE_SPEED,200,3);
-                                break;
-                            default://Move to the center
-                                //robot.sampleMineral();
-                                //robot.encoderDriveStraight(0.8, 500, 4);
-                                //Move a bit forward to make sure if we drop the mineral its completely moved
-                                //robot.encoderDriveStraight(0.8, 50, 4);
-                                //Lift the arm up
-                                //robot.encoderMoveLift(1000, DRIVE_SPEED, 3);
-                                //Drive to Crator to park
-                                //robot.encoderDriveStraight(0.5,100,3);
-                                break;
-                        }
+
+                    //Use the Touch Sensor to End Mode
+                    if (digitalTouch.getState() == true) {
+                        sampledetected = false;
+                        //telemetry.addData("Digital Touch", "Is Not Pressed");
+                    } else {
+                        telemetry.addData("Digital Touch", "Is Pressed");
+                        sampledetected = true;
                     }
+
+//                    if(sampledetected){
+//                        //Sample and add Path and Park in Crator
+//                        telemetry.addData("Moving to Mineral!", "Hdng,Pos:(" + detected.targetHeading + "),(" + detected.position + ")");
+//                        //From the Lander
+//                        //1. Rotate towards mineral
+//                        //2. Setup collector and drive towards sample
+//                        //3. Turn to avoid Silver
+//                        //4. Lift Arm to fit over crator
+//                        //5. Drive and Park
+//                        switch (detected.position)
+//                        {
+//                            case LEFT:
+//                                                                //robot.encoderDriveStraight(DRIVE_SPEED,150,3);
+//                                //robot.imuDriveStraight(0.2,150,3);
+//                                //robot.rotate(-1 * (int) Math.round(detected.targetHeading), ROTATE_POWER);//0.6
+//                                //robot.sampleMineral();
+//                                //robot.encoderDriveStraight(DRIVE_SPEED, 500, 4);
+//                                //Move a bit forward to make sure if we drop the mineral its completely moved
+//                                //robot.encoderDriveStraight(DRIVE_SPEED, 50, 4);
+//                                //Lift the arm up
+//                                //robot.encoderMoveLift(1000, DRIVE_SPEED, 3);
+//                                //Turn a bit right to make sure we are over the crator
+//                                //robot.rotate(-5,0.8);
+//                                //Drive to Crator to park
+//                                //robot.encoderDriveStraight(DRIVE_SPEED,200,3);
+//                                break;
+//                            case CENTER:
+//                                //setupCollectorliftarm();
+//                                //robot.encoderDriveStraight(DRIVE_SPEED,150,3);
+//                                //robot.sampleMineral();
+//                                //robot.encoderDriveStraight(DRIVE_SPEED, 500, 4);
+//                                //Move a bit forward to make sure if we drop the mineral its completely moved
+//                                //robot.encoderDriveStraight(DRIVE_SPEED, 50, 4);
+//                                //Lift the arm up
+//                                //robot.encoderMoveLift(1000, DRIVE_SPEED, 3);
+//                                //Drive to Crator to park
+//                                //robot.encoderDriveStraight(DRIVE_SPEED,100,3);
+//                                break;
+//                            case RIGHT:
+//                                //setupCollectorliftarm();
+//                                //robot.encoderDriveStraight(DRIVE_SPEED,150,3);
+//                                //robot.rotate(-17, ROTATE_POWER);//0.6
+//                                //robot.sampleMineral();
+//                                //Turn a bit left to make sure we are over the crater
+//                                //robot.encoderDriveStraight(DRIVE_SPEED, 500, 4);
+//                                //Lift the arm up
+//                                //robot.encoderMoveLift(1000, DRIVE_SPEED, 3);
+//                                //robot.rotate(5,0.5);
+//                                //Drive to Crator to park
+//                                //robot.encoderDriveStraight(DRIVE_SPEED,200,3);
+//                                break;
+//                            default://Move to the center
+//                                //robot.sampleMineral();
+//                                //robot.encoderDriveStraight(0.8, 500, 4);
+//                                //Move a bit forward to make sure if we drop the mineral its completely moved
+//                                //robot.encoderDriveStraight(0.8, 50, 4);
+//                                //Lift the arm up
+//                                //robot.encoderMoveLift(1000, DRIVE_SPEED, 3);
+//                                //Drive to Crator to park
+//                                //robot.encoderDriveStraight(0.5,100,3);
+//                                break;
+//                        }
+//                    }
                 }
             }
             //Shutdown to release resources
             if (tfod != null) {
                 tfod.shutdown();
             }
+
         }
         catch (Exception ex){
             telemetry.addData("Exception ", ex.getMessage());
@@ -287,7 +310,8 @@ public class AOSampleAndParkCrater extends LinearOpMode {
          */
         parameters.cameraName = webcamName;
         //  Instantiate the Vuforia engine
-        vuforia = ClassFactory.getInstance().createVuforia(parameters);
+        vuforia = new VuforiaLocalizerImpl(parameters);// ClassFactory.getInstance().createVuforia(parameters);
+
         // Loading trackables is not necessary for the Tensor Flow Object Detection engine.
     }
 
